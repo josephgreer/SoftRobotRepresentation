@@ -1,1 +1,1 @@
-sshfs -o "IdentityFile=~/CS231N/Project/ami_keypair.pem" ubuntu@$AWS_IP:/USForceLearning ~/USForceLearning
+sshfs -o "IdentityFile=../ami_keypair.pem" ubuntu@$AWS_DNS:/ ~/aws
