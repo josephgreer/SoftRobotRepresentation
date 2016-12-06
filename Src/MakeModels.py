@@ -1,15 +1,20 @@
-from keras.layers import merge, Deconvolution2D, UpSampling2D, Convolution2D, MaxPooling2D, Input, Dense, Flatten, BatchNormalization, LeakyReLU
+from keras.layers import Lambda,merge, Deconvolution2D, UpSampling2D, Convolution2D, MaxPooling2D, Input, Dense, Flatten, Merge, BatchNormalization, LeakyReLU, LSTM
 from keras.models import Model
+from keras import backend as K
 import os
 
 nBottleneck = 25
-batchSz = 32
 
 imDim = 256
 
 imageInput = Input(shape=(imDim, imDim, 3))
 
-def makeEncoder():
+nWindow = 1
+positionInput = Input(shape=(2*nWindow,))
+nHiddenLSTM = 64
+
+def makeEncoder(batchSz):
+    gBatchSz = batchSz
     # first, define the encoder
 
     # imDim x imDim input
@@ -100,3 +105,35 @@ def makeAutoencoder(encoder_model, generator_model):
     x = generator_model(x)
     autoencoder = Model(imageInput, x)
     return autoencoder
+
+def makePlainLSTM():
+    x = LSTM(nHiddenLSTM)(positionInput)
+    x = Dense(round(nHiddenLSTM/2))(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(2)(x)
+    plainLSTM = Model(positionInput,x)
+    return plainLSTM
+
+def squeezeTwice(x):
+    x = K.squeeze(x,1)
+    return K.squeeze(x,1)
+
+def expandDims(x):
+    return K.expand_dims(x,dim=0)
+
+def makeImageLSTM(encoder):
+    y = encoder(imageInput)
+    y = Lambda(squeezeTwice)(y)
+    #y = Flatten()(y)
+    print K.int_shape(y)
+    x = merge([positionInput,y],mode='concat')
+    x = Lambda(expandDims)(x)
+    print K.int_shape(x)
+    x = LSTM(nHiddenLSTM)(x)
+    print K.int_shape(x)
+    x = Dense(round(nHiddenLSTM/2))(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(2)(x)
+    print K.int_shape(x)
+    imageLSTM = Model([positionInput,imageInput],x)
+    return imageLSTM
