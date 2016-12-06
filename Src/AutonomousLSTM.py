@@ -1,4 +1,3 @@
-%matplotlib inline
 timeSz = 32
 from MakeModels import *
 encoder = makeEncoder(timeSz)
@@ -52,12 +51,13 @@ def trainGenerator():
     res = np.zeros(shape=(timeSz,imDim,imDim,3))
     while True:
         for i in range(numBatchesPerEpoch):
-            resPos = positionDataTrain[i*timeSz:(i+1)*(timeSz),:]
+	    offset = np.random.randint(0,timeSz)
+            resPos = positionDataTrain[i*timeSz+offset:(i+1)*(timeSz)+offset,:]
             for j in range(timeSz):
-                index = i*timeSz+j
+                index = i*timeSz+j+offset
                 res[j,:] = plt.imread(files[index]).astype('float32')/255.0
                 
-            posRes = positionDataTrain[i*timeSz+predictAhead:(i+1)*timeSz+predictAhead,:]
+            posRes = positionDataTrain[i*timeSz+offset+predictAhead:(i+1)*timeSz+offset+predictAhead,:]
             yield ([resPos,res],posRes)
         
 def valGenerator():  
@@ -66,12 +66,13 @@ def valGenerator():
     res = np.zeros(shape=(timeSz,imDim,imDim,3))
     while True:
         for i in range(nValBatches):
-            resPos = positionDataVal[i*timeSz:(i+1)*(timeSz),:]
+	    offset = np.random.randint(0,timeSz)
+            resPos = positionDataVal[i*timeSz+offset:(i+1)*(timeSz)+offset,:]
             for j in range(timeSz):
-                index = i*timeSz+j
+                index = i*timeSz+j+offset
                 res[j,:] = plt.imread(files[index]).astype('float32')/255.0
                 
-            posRes = positionDataVal[i*timeSz+predictAhead:(i+1)*timeSz+predictAhead,:]
+            posRes = positionDataVal[i*timeSz+offset+predictAhead:(i+1)*timeSz+offset+predictAhead,:]
             yield ([resPos,res],posRes)
             
             
@@ -84,7 +85,7 @@ def trainGeneratorPlainPos():
             posRes = positionDataTrain[i*(timeSz+1)+predictAhead,:]
             yield (res,posRes)
         
-def valGenerator():  
+def valGeneratorPlainPos():  
     res = np.zeros(shape=(timeSz,2))
     while True:
         for i in range(nValBatches):
@@ -101,7 +102,7 @@ from keras.callbacks import ModelCheckpoint
 from keras.callbacks import ReduceLROnPlateau
 
 
-lr = 5e-2
+lr = 4e-3
 print "Learning rate=" + str(lr)
 print "Compiling model"
 imageLSTM.compile(optimizer=Adam(lr=lr),loss='mse')
