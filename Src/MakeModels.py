@@ -2,6 +2,7 @@ from keras.layers import Lambda,merge, Deconvolution2D, UpSampling2D, Convolutio
 from keras.models import Model
 from keras import backend as K
 import os
+import Constants as C
 
 nBottleneck = 25
 
@@ -107,12 +108,23 @@ def makeAutoencoder(encoder_model, generator_model):
     return autoencoder
 
 def makePlainLSTM():
-    x = LSTM(nHiddenLSTM)(positionInput)
+    posInput = Input(shape=(C.timeSz,2))
+    x = LSTM(nHiddenLSTM)(posInput)
     x = Dense(round(nHiddenLSTM/2))(x)
     x = LeakyReLU(alpha=0.2)(x)
     x = Dense(2)(x)
-    plainLSTM = Model(positionInput,x)
+    plainLSTM = Model(posInput,x)
     return plainLSTM
+
+def makeFeatureLSTM(featureSz):
+    featureInput = Input(shape=(C.timeSz,featureSz))
+    x = LSTM(nHiddenLSTM)(featureInput)
+    x = Dense(round(nHiddenLSTM/2))(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(2)(x)
+    featureLSTM = Model(featureInput,x)
+    return featureLSTM
+
 
 def squeezeTwice(x):
     x = K.squeeze(x,1)
