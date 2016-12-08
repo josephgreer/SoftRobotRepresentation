@@ -12,7 +12,7 @@ imageInput = Input(shape=(imDim, imDim, 3))
 
 nWindow = 1
 positionInput = Input(shape=(2*nWindow,))
-nHiddenLSTM = 64
+nHiddenLSTM = 512 
 
 def makeEncoder(batchSz):
     gBatchSz = batchSz
@@ -109,8 +109,15 @@ def makeAutoencoder(encoder_model, generator_model):
 
 def makePlainLSTM():
     posInput = Input(shape=(C.timeSz,2))
-    x = LSTM(nHiddenLSTM)(posInput)
+    x = LSTM(nHiddenLSTM,consume_less='gpu')(posInput)
     x = Dense(round(nHiddenLSTM/2))(x)
+    x = BatchNormalization(mode=2)(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(round(nHiddenLSTM/4))(x)
+    x = BatchNormalization(mode=2)(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(round(nHiddenLSTM/8))(x)
+    x = BatchNormalization(mode=2)(x)
     x = LeakyReLU(alpha=0.2)(x)
     x = Dense(2)(x)
     plainLSTM = Model(posInput,x)
@@ -118,10 +125,18 @@ def makePlainLSTM():
 
 def makeFeatureLSTM(featureSz):
     featureInput = Input(shape=(C.timeSz,featureSz))
-    x = LSTM(nHiddenLSTM)(featureInput)
+    x = LSTM(nHiddenLSTM,consume_less='gpu')(featureInput)
     x = Dense(round(nHiddenLSTM/2))(x)
+    x = BatchNormalization(mode=2)(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(round(nHiddenLSTM/4))(x)
+    x = BatchNormalization(mode=2)(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(round(nHiddenLSTM/8))(x)
+    x = BatchNormalization(mode=2)(x)
     x = LeakyReLU(alpha=0.2)(x)
     x = Dense(2)(x)
+
     featureLSTM = Model(featureInput,x)
     return featureLSTM
 
@@ -141,7 +156,7 @@ def makeImageLSTM(encoder):
     x = merge([positionInput,y],mode='concat')
     x = Lambda(expandDims)(x)
     print K.int_shape(x)
-    x = LSTM(nHiddenLSTM)(x)
+    x = LSTM(nHiddenLSTM,consume_less='gpu')(x)
     print K.int_shape(x)
     x = Dense(round(nHiddenLSTM/2))(x)
     x = LeakyReLU(alpha=0.2)(x)
