@@ -109,15 +109,9 @@ def makeAutoencoder(encoder_model, generator_model):
 
 def makePlainLSTM():
     posInput = Input(shape=(C.timeSz,2))
-    x = LSTM(nHiddenLSTM,consume_less='gpu')(posInput)
-    x = Dense(round(nHiddenLSTM/2))(x)
-    x = BatchNormalization(mode=2)(x)
-    x = LeakyReLU(alpha=0.2)(x)
-    x = Dense(round(nHiddenLSTM/4))(x)
-    x = BatchNormalization(mode=2)(x)
-    x = LeakyReLU(alpha=0.2)(x)
-    x = Dense(round(nHiddenLSTM/8))(x)
-    x = BatchNormalization(mode=2)(x)
+    nHid = 64
+    x = LSTM(nHid)(posInput)
+    x = Dense(round(nHid/2))(x)
     x = LeakyReLU(alpha=0.2)(x)
     x = Dense(2)(x)
     plainLSTM = Model(posInput,x)
@@ -139,7 +133,6 @@ def makeFeatureLSTM(featureSz):
 
     featureLSTM = Model(featureInput,x)
     return featureLSTM
-
 
 def squeezeTwice(x):
     x = K.squeeze(x,1)
@@ -164,3 +157,12 @@ def makeImageLSTM(encoder):
     print K.int_shape(x)
     imageLSTM = Model([positionInput,imageInput],x)
     return imageLSTM
+
+def makeFeatureDecoder(featureSz):
+    featureInput = Input(shape=(featureSz,))
+    x = Dense(featureSz,)(featureInput)
+    x = BatchNormalization(mode=2)(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dense(2,)(x)
+    featureDecoder = Model(featureInput, x)
+    return featureDecoder
